@@ -24,6 +24,9 @@
     "jsdom": "^16.2.2",
     "lodash": "^4.17.19",
     "moment": "^2.26.0"
+    "puppeteer": "^10.4.0",
+    "puppeteer-extra": "^3.2.3",
+    "puppeteer-extra-plugin-stealth": "^2.8.1"
   },
   "devDependencies": {
     "eslint": "^7.1.0",
