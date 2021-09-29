@@ -5,6 +5,9 @@ const https = require('https')
 const moment = require('moment')
 const { JSDOM } = require('jsdom')
 const MongoClient = require('mongodb').MongoClient
+const puppeteer = require('puppeteer-extra')
+const StealthPlugin = require('puppeteer-extra-plugin-stealth')
+puppeteer.use(StealthPlugin())
 
 const CONFIG_FILE = './config.json'
 
@@ -28,6 +31,10 @@ async function mainRoutine() {
     if(!imageRepository) {
         console.info('No image repository specified : will use current directory')
         imageRepository = './images'
+    }
+    if(!pdfRepository) {
+        console.info('No PDF repository specified : will use current directory')
+        pdfRepository = './pdf'
     }
 
     // Initialize db connection and image repository
@@ -102,6 +109,8 @@ async function mainRoutine() {
                         console.debug(`Skipping estate ${immowebCode} (same modification date as in database)`)
                         continue
                     }
+                    // save PDF printout
+                    printPDF(immowebCode)
                     // save the images to the repo (only the new ones, doesn't check for difference inside image file)
                     const imageURLs = estateData.media.pictures.map(p => p.largeUrl || p.mediumUrl || p.smallUrl)
                     const imageNames = []
@@ -275,6 +284,19 @@ async function fetchHTMLFromURL(url) {
 
 }
 
+async function printPDF(immowebCode) {
+  const estateURL = `https://www.immoweb.be/nl/afdrukken/${immowebCode}`
+  const outputPath = `${pdfRepository}/${immowebCode}.pdf`
+  
+  console.info(estateURL)
+  const browser = await puppeteer.launch({ args: ['--no-sandbox', '--disable-setuid-sandbox'] })
+  const page = await browser.newPage()
+  await page.goto(estateURL, {waitUntil: 'networkidle0'})
+  const pdf = await page.pdf({ format: 'A4', path: outputPath })
+
+  await browser.close()
+  return pdf
+}
 
 /**
  * TODO :
